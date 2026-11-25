@@ -1,7 +1,7 @@
 /* 모든 형성평가 페이지가 함께 쓰는 점수 전송 모듈.
    Apps Script를 배포한 뒤 나오는 웹 앱 URL을 아래 따옴표 안에 붙여 넣으세요. */
 window.Collector = (() => {
-  const URL = 'PASTE_APPS_SCRIPT_URL_HERE';
+  const URL = 'https://script.google.com/a/macros/senedu.kr/s/AKfycbxyaaAEgIiCtitApuN1X_JEnjg9_XqEZc19ehdEc09O7eAAqkUPd5jdVA80yKej2OzH/exec';
   const ready = () => URL.startsWith('https://script.google.com/');
   const attempt = quiz => {
     let n = 1;
