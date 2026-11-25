@@ -1,6 +1,6 @@
 # 데이터 과학 형성평가
 
-GitHub Pages로 여는 형성평가 페이지 모음입니다. 학생 점수는 Google Apps Script를 거쳐 구글 시트에 평가별 탭으로 쌓입니다.
+https://dni2026.github.io/quiz/ 에서 여는 형성평가 페이지 모음입니다. 학생 점수는 Google Apps Script를 거쳐 구글 시트에 평가별 탭으로 쌓입니다.
 
 | 경로 | 내용 |
 | --- | --- |
