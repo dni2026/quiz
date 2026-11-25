@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>데이터 분석 형성평가</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;800&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 교실 게임 — 또렷하고 경쾌하게, 설명은 짧게
+   IDEA: 지하철 노선도 — 네 관문이 역이고, 풀어 갈수록 노선을 따라 나아감
+   PICTURE: 노선도 진행 표시 아래, 끌어다 놓는 문제 판 자체가 화면의 주인공
+   COLOUR/TYPE: 흰 바탕(밤 #0e1116), 노선 색 파랑·빨강·노랑·초록 / Figtree 800 + Noto Sans KR
+   LAYOUT: 제목 → 노선도 → 현재 관문 → 결과표, 600px 아래는 한 줄로 쌓기 */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0e1116);--ink:light-dark(#111418,#eef1f5);--mute:light-dark(#5b6472,#9aa4b2);--card:light-dark(#f3f5f8,#171b22);--line:light-dark(#cfd6e0,#2c333e);--blue:#0a5cff;--red:#e6261f;--amber:#ffb400;--green:#00a05a;--ok:light-dark(#0a7d4a,#3ccf8e);--bad:light-dark(#d01e17,#ff6b63);--c:var(--blue)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 'Figtree','Noto Sans KR',system-ui,sans-serif;overflow-x:clip}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.top{padding:clamp(24px,4vw,48px) max(5vw,16px) 8px;max-width:1040px;margin:0 auto}
+.eyebrow{margin:0;font-size:14px;font-weight:700;color:var(--mute)}
+h1{font-size:clamp(32px,5vw,48px);line-height:1.05;font-weight:900;margin:6px 0 8px;text-wrap:balance}
+.intro{margin:0 0 28px;color:var(--mute);max-width:62ch}
+.metro{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:relative}
+.metro::before{content:"";position:absolute;top:13px;left:12.5%;right:12.5%;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--blue) 0 33.3%,var(--red) 33.3% 66.6%,var(--amber) 66.6%)}
+.st{position:relative;text-align:center;padding:44px 4px 0;font-size:14px}
+.dot{position:absolute;top:0;left:50%;width:34px;height:34px;margin-left:-17px;border-radius:50%;background:var(--bg);border:7px solid var(--c);display:grid;place-items:center}
+.st.done .dot{background:var(--c);border-width:0}
+.st.now .dot{box-shadow:0 0 0 7px color-mix(in srgb,var(--c) 28%,transparent);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 12px color-mix(in srgb,var(--c) 10%,transparent)}}
+.st b{display:block;font-weight:700;line-height:1.3}.st span{color:var(--mute);font-size:13px}
+main{padding:28px max(5vw,16px) 64px;max-width:1040px;margin:0 auto}
+.panel{border-top:8px solid var(--c);padding-top:22px}
+h2{font-size:26px;line-height:1.2;margin:0 0 6px}
+.lead{color:var(--mute);margin:0 0 20px}
+.ox{display:grid;grid-template-columns:150px minmax(0,1fr) 150px;gap:20px;align-items:center}
+.zone{height:200px;border-radius:20px;border:3px dashed var(--line);background:var(--card);color:var(--ink);display:grid;place-content:center;gap:2px;cursor:pointer;font-size:15px;font-weight:700}
+.zone b{font:800 76px/1 Figtree,sans-serif}.zone.o b{color:var(--blue)}.zone.x b{color:var(--red)}
+.zone.o.over,.zone.o:hover{border:3px solid var(--blue);background:color-mix(in srgb,var(--blue) 10%,var(--card))}
+.zone.x.over,.zone.x:hover{border:3px solid var(--red);background:color-mix(in srgb,var(--red) 10%,var(--card))}
+.zone:disabled{opacity:.4;cursor:default}
+.count{margin:0 0 10px;font-weight:800;font-family:Figtree,sans-serif;color:var(--mute)}
+.card{width:100%;min-height:230px;border-radius:20px;background:var(--card);border:2px solid var(--line);padding:24px 26px;display:flex;flex-direction:column;gap:12px;text-align:left;color:inherit;box-shadow:0 10px 0 -2px color-mix(in srgb,var(--c) 40%,transparent);cursor:grab;touch-action:none;user-select:none}
+.card p{margin:0;font-size:clamp(19px,2.4vw,23px);font-weight:700;line-height:1.45}
+.card small{color:var(--mute);font-size:14px;margin-top:auto}
+.card.locked{cursor:default}
+.card .v{font-size:18px;font-weight:900}.card.ok{border-color:var(--ok)}.card.ok .v{color:var(--ok)}.card.bad{border-color:var(--bad)}.card.bad .v{color:var(--bad)}
+.card .why{font-size:16px;font-weight:400;color:var(--mute)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border-radius:12px;background:var(--bg);border:2px solid var(--ink);color:var(--ink);font-size:16px;font-weight:700;line-height:1.3;cursor:grab;touch-action:none;user-select:none;text-align:left}
+.chip.sel{outline:3px solid var(--c);outline-offset:2px}
+.chip.lift{opacity:.3}
+.chip.locked{cursor:default}
+.chip.ok{border-color:var(--ok);color:var(--ok)}.chip.bad{border-color:var(--bad);color:var(--bad)}
+.chip .to{font-size:13px;font-weight:400}
+.ghost{position:fixed;left:0;top:0;z-index:60;pointer-events:none;margin:0;box-shadow:0 16px 32px rgba(0,0,0,.25)}
+.picking [data-drop]{cursor:copy}
+.tray{display:flex;flex-wrap:wrap;gap:10px;padding:16px;border-radius:16px;background:var(--card);border:2px dashed var(--line);min-height:80px;margin:18px 0}
+.tray.over{border-color:var(--c)}
+.ph{color:var(--mute);font-size:14px;align-self:center}
+.defs{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:center;padding:10px;border-radius:14px;background:var(--card)}
+.slot{min-height:56px;border:2px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:4px;background:var(--bg)}
+.slot.over,.bin.over{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--bg))}
+.row.ok .slot{border:2px solid var(--ok)}.row.bad .slot{border:2px solid var(--bad)}
+.def{font-size:16px}.def em{display:block;font-style:normal;color:var(--bad);font-weight:700;font-size:14px}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.bin{border-radius:16px;background:var(--card);border:2px dashed var(--line);padding:14px;min-height:180px;display:flex;flex-direction:column;gap:6px}
+.bin h3{margin:0;font-size:19px}.bin p{margin:0 0 6px;color:var(--mute);font-size:14px}
+.bin .in{display:flex;flex-wrap:wrap;gap:8px}
+.act{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px}.act span{color:var(--mute);font-size:15px}
+.go{min-height:48px;padding:0 24px;border-radius:999px;border:0;background:var(--ink);color:var(--bg);font-weight:800;font-size:16px;cursor:pointer}
+.go:disabled{opacity:.35;cursor:not-allowed}
+.go.ghostbtn{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.send{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--card);border:2px solid var(--line);margin:0 0 24px}
+.send span{color:var(--mute);font-size:15px}.send.ok{border-color:var(--ok)}.send.ok b{color:var(--ok)}.send.bad{border-color:var(--bad)}.send.bad b{color:var(--bad)}.send .go{min-height:44px}
+input.sid{width:150px}input.nm{width:200px}input:user-invalid{border-color:var(--bad)}
+details{margin-top:18px;background:var(--card);border-radius:14px;padding:12px 16px}
+summary{cursor:pointer;font-weight:700;min-height:28px}
+details ul{margin:10px 0 0;padding-left:20px}details li{margin:4px 0}
+.start{display:grid;gap:22px}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.plan li{background:var(--card);border-radius:14px;padding:14px 16px;border-left:8px solid var(--c)}
+.plan b{display:block}.plan span{color:var(--mute);font-size:14px}
+label{font-weight:700;display:block;margin-bottom:6px}
+input{font-size:16px;min-height:48px;padding:0 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);width:min(340px,100%)}
+.form{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.score{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:6px 0 4px}
+.score b{font:800 clamp(56px,10vw,96px)/1 Figtree,sans-serif}.score span{font-size:22px;font-weight:700;color:var(--mute)}
+.who{color:var(--mute);margin:0 0 22px}
+.bars{display:grid;gap:10px;margin-bottom:28px}
+.bar{display:grid;grid-template-columns:140px minmax(0,1fr) 56px;gap:12px;align-items:center}
+.track{height:14px;background:var(--card);border-radius:7px;overflow:hidden}.fill{height:100%;background:var(--c);border-radius:7px}
+.bar .n{text-align:right;font-weight:800;font-family:Figtree,sans-serif;white-space:nowrap}
+h3.sub{font-size:19px;margin:0 0 8px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:700}
+th{white-space:nowrap}td.bad,td.ok{white-space:nowrap}td.bad{color:var(--bad);font-weight:700}td.ok{color:var(--ok);font-weight:700}
+@media(prefers-reduced-motion:reduce){.st.now .dot{animation:none}}
+@media(max-width:600px){
+ .ox{grid-template-columns:1fr 1fr;gap:12px}.deck{grid-column:1/-1;order:-1}.zone{height:110px}.zone b{font-size:52px}
+ .row{grid-template-columns:1fr}.def{order:-1}
+ .bar{grid-template-columns:96px minmax(0,1fr) 48px}.st b{font-size:13px}
+ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:5.5em}.stack td::before{content:attr(data-l);float:inline-start;width:5em;margin-inline-start:-5.5em;color:var(--mute);font-weight:400}.stack td:empty{display:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <p class="eyebrow">2학년 데이터 과학 · 1차 형성평가</p>
+  <h1>데이터 분석 방법</h1>
+  <p class="intro">데이터의 속성, 전처리, 기계학습의 방법과 알고리즘을 네 개의 관문으로 확인합니다. 카드를 끌어다 놓거나, 카드를 누른 뒤 놓을 곳을 눌러도 됩니다.</p>
+  <ol class="metro" id="metro"></ol>
+</header>
+<main id="app"></main>
+<script src="../assets/collector.js"></script>
+<script>
+{
+const QUIZ='1차 데이터 분석 방법';
+const OX=[
+ {q:'기온처럼 소수점이 있는 수는 실수형(float) 데이터이다.',a:'O',why:'소수점이 있는 수치형 데이터는 실수형(float)입니다.'},
+ {q:'지역 이름 같은 문자형 범주 데이터는 pandas에서 int 자료형으로 나타난다.',a:'X',why:'문자로 된 범주형 데이터는 object 자료형입니다. int는 정수형입니다.'},
+ {q:'다른 속성의 영향을 받는 속성을 독립변수라고 한다.',a:'X',why:'영향을 받는 속성은 종속변수, 영향을 주는 속성이 독립변수입니다.'},
+ {q:'값이 비어 있는 데이터를 이상치라고 한다.',a:'X',why:'값이 비어 있으면 결측치입니다. 이상치는 다른 값과 크게 동떨어진 값입니다.'},
+ {q:'모델의 성능은 학습에 쓴 훈련 데이터가 아니라, 처음 보는 테스트 데이터로 평가해야 한다.',a:'O',why:'훈련 데이터는 모델이 이미 본 데이터라 점수가 실제보다 좋게 나옵니다. 새 데이터에서도 잘 맞는지는 따로 떼어 둔 테스트 데이터로 확인합니다.'},
+ {q:'pandas에서 데이터의 평균은 mean() 함수로 구한다.',a:'O',why:'pandas는 mean()으로 평균을 구합니다. avg()라는 함수는 없습니다.'},
+ {q:'지도학습은 레이블(정답)이 있는 데이터로 학습한다.',a:'O',why:'정답이 있으면 지도학습, 없으면 비지도학습입니다.'},
+ {q:'군집은 지도학습에 속하는 모델이다.',a:'X',why:'군집은 정답 없이 비슷한 것끼리 묶는 비지도학습 모델입니다.'},
+ {q:'K-평균은 비슷한 데이터끼리 K개의 그룹으로 묶는 알고리즘이다.',a:'O',why:'K개의 중심을 정하고, 가까운 데이터를 묶고 중심을 다시 계산하는 과정을 반복합니다.'},
+ {q:'두 속성의 상관관계가 높으면 반드시 인과관계도 있다.',a:'X',why:'상관은 함께 변한다는 뜻일 뿐 원인과 결과를 보장하지 않습니다(상관 ≠ 인과).'},
+ {q:'연관 규칙의 향상도가 1보다 작으면 두 항목은 양의 연관이 있다.',a:'X',why:'향상도 1 초과는 양의 연관, 1은 서로 무관, 1 미만은 음의 연관입니다.'},
+ {q:'행과 열로 이루어진 표 형태의 데이터는 정형 데이터이다.',a:'O',why:'CSV나 표처럼 정해진 행·열 구조를 가진 데이터가 정형 데이터입니다.'}
+];
+const TERMS=['결측치','이상치','정규화','종속변수','최소제곱법','지지도','심슨의 역설','탐색적 데이터 분석(EDA)','표준화','신뢰도'];
+const DEFS=['값이 비어 있는 데이터','다른 값들과 크게 동떨어진 비정상적인 값','단위·범위가 다른 값들을 0~1 같은 범위로 맞추는 것','다른 속성의 영향을 받는 속성','오차 제곱의 합이 가장 작은 직선을 찾는 방법','전체 중 A와 B가 함께 나타난 비율','전체에서 본 상관이 하위 집단으로 나누면 반대로 나타나는 현상','요약 통계와 그래프로 데이터의 특징을 살피는 분석'];
+const SORTS={
+ algo:{title:'알고리즘 분류',lead:'각 알고리즘을 판서에서 정리한 구현 모델에 맞는 칸으로 옮기세요.',
+  bins:[{k:'reg',t:'회귀만',d:'숫자 값을 예측'},{k:'cls',t:'분류만',d:'어느 범주인지 판정'},{k:'both',t:'회귀·분류 모두',d:'두 가지에 다 쓰임'},{k:'uns',t:'비지도 (군집·연관)',d:'정답 없이 묶거나 규칙 찾기'}],
+  items:[{t:'선형 회귀',b:'reg',why:'데이터를 가장 잘 나타내는 직선으로 숫자 값을 예측합니다.'},{t:'로지스틱 회귀',b:'cls',why:'결과를 0~1 확률로 바꾸어 범주를 판정합니다.'},{t:'K-최근접 이웃(KNN)',b:'both',why:'이웃 값의 평균이면 회귀, 이웃의 다수결이면 분류입니다.'},{t:'의사결정트리',b:'both',why:'구간 평균으로 예측하면 회귀, 마지막 노드의 범주로 판정하면 분류입니다.'},{t:'서포트 벡터 머신(SVM)',b:'cls',why:'두 집단 사이 간격(마진)이 가장 넓은 경계선으로 분류합니다.'},{t:'K-평균(K-means)',b:'uns',why:'정답 없이 가까운 데이터끼리 K개 군집으로 묶습니다.'},{t:'연관 규칙(지지도·신뢰도)',b:'uns',why:'정답 없이 함께 나타나는 항목의 규칙을 찾습니다.'}]},
+ attr:{title:'데이터 속성 분류',lead:'각 데이터가 어떤 속성인지 알맞은 칸으로 옮기세요.',
+  bins:[{k:'con',t:'연속형',d:'수치형 · 측정한 값'},{k:'dis',t:'이산형',d:'수치형 · 셀 수 있는 값'},{k:'nom',t:'명목형',d:'범주형 · 순서 없음'},{k:'ord',t:'순서형',d:'범주형 · 순서 있음'}],
+  items:[{t:'기온(℃)',b:'con',why:'온도계로 측정하며 소수점 값도 가능합니다.'},{t:'키(cm)',b:'con',why:'자로 측정하는 연속적인 값입니다.'},{t:'학급 학생 수(명)',b:'dis',why:'1명, 2명처럼 셀 수 있는 값입니다.'},{t:'하루 판매 개수(개)',b:'dis',why:'개수로 세는 값입니다.'},{t:'지역 이름',b:'nom',why:'구분만 할 뿐 순서가 없습니다.'},{t:'혈액형',b:'nom',why:'A·B·O·AB 사이에 순서가 없습니다.'},{t:'만족도(상·중·하)',b:'ord',why:'범주이지만 상 > 중 > 하의 순서가 있습니다.'},{t:'메달 색(금·은·동)',b:'ord',why:'범주이지만 금 > 은 > 동의 순서가 있습니다.'}]}
+};
+const STAGES=[{key:'ox',name:'진위형 O·X',c:'var(--blue)',n:12},{key:'match',name:'용어 연결',c:'var(--red)',n:8},{key:'algo',name:'알고리즘 분류',c:'var(--amber)',n:7},{key:'attr',name:'데이터 속성 분류',c:'var(--green)',n:8}];
+const TOTAL=STAGES.reduce((s,x)=>s+x.n,0);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const idx=n=>[...Array(n).keys()];
+const CHECK='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let S,H={},sel=null,D=null;
+let saved={sid:'',name:''};try{saved=JSON.parse(localStorage.getItem('dsq-who'))||saved}catch(e){}
+function reset(who){S={sid:who.sid||'',name:who.name||'',stage:-1,sent:null,payload:null,scores:[null,null,null,null],wrong:[],
+ ox:{order:shuf(idx(OX.length)),i:0,ans:null,got:0},
+ match:{place:{},dorder:shuf(idx(DEFS.length)),corder:shuf(idx(TERMS.length)),graded:false},
+ algo:{bins:{},order:shuf(idx(SORTS.algo.items.length)),graded:false},
+ attr:{bins:{},order:shuf(idx(SORTS.attr.items.length)),graded:false}}}
+reset(saved);
+
+function metro(){
+ $('#metro').innerHTML=STAGES.map((s,i)=>{const sc=S.scores[i];const cls=sc?'done':(S.stage===i?'now':'');
+  return `<li class="st ${cls}" style="--c:${s.c}"><span class="dot">${sc?CHECK:''}</span><b>${s.name}</b><span>${sc?sc.got+' / '+sc.total:s.n+'문항'}</span></li>`}).join('');
+}
+function select(c){document.querySelectorAll('.chip.sel').forEach(x=>x.classList.remove('sel'));sel=c?c.dataset.id:null;if(c)c.classList.add('sel');document.body.classList.toggle('picking',!!c)}
+function render(){
+ sel=null;document.body.classList.remove('picking');metro();
+ const m=$('#app');H={};
+ if(S.stage>=0&&S.stage<4)m.style.setProperty('--c',STAGES[S.stage].c);else m.style.setProperty('--c','var(--blue)');
+ if(S.stage<0)m.innerHTML=startV();else if(S.stage===0)m.innerHTML=oxV();else if(S.stage===1)m.innerHTML=matchV();else if(S.stage<4)m.innerHTML=sortV(STAGES[S.stage].key);else{m.innerHTML=resultV();sendScore(false)}
+}
+function startV(){
+ return `<section class="panel start"><div><h2>네 관문, ${TOTAL}문항</h2><p class="lead">관문마다 채점 결과와 풀이가 바로 나옵니다. 마지막에 점수와 틀린 문항을 모아 보여 줍니다.</p></div>
+ <ul class="plan">${STAGES.map(s=>`<li style="--c:${s.c}"><b>${s.name}</b><span>${s.n}문항</span></li>`).join('')}</ul>
+ <form class="form" id="startf"><div><label for="sid">학번</label><input id="sid" class="sid" inputmode="numeric" autocomplete="off" required pattern="[0-9]{4,6}" title="숫자 4~6자리" placeholder="20315" value="${esc(S.sid)}"></div><div><label for="nm">이름</label><input id="nm" class="nm" autocomplete="off" required maxlength="20" placeholder="김하늘" value="${esc(S.name)}"></div><button class="go" type="submit">시작하기</button></form><p class="lead" style="margin:0">마지막 관문을 마치면 점수가 선생님께 자동으로 제출됩니다. 학번과 이름을 정확히 입력하세요.</p></section>`;
+}
+function oxV(){
+ const o=S.ox,q=OX[o.order[o.i]];
+ H.tap=a=>answer(a);H.drop=(id,t)=>answer(t);H.pick=false;
+ let card;
+ if(!o.ans)card=`<div class="chip card" data-id="card" tabindex="0" aria-label="문제 카드"><p>${esc(q.q)}</p><small>카드를 O나 X로 끌어다 놓거나, 버튼을 누르세요. 키보드 O·X 키도 됩니다.</small></div>`;
+ else{const ok=o.ans===q.a;card=`<div class="chip card locked ${ok?'ok':'bad'}" data-id="card"><span class="v">${ok?'정답이에요':'아쉬워요 · 정답은 '+q.a}</span><p>${esc(q.q)}</p><span class="why">${esc(q.why)}</span></div>`}
+ return `<section class="panel"><h2>관문 1 · 진위형 O·X</h2><p class="lead">문장이 맞으면 O, 틀리면 X로 보내세요.</p>
+ <div class="ox"><button class="zone o" data-drop="O" ${o.ans?'disabled':''}><b>O</b>맞다</button>
+ <div class="deck"><p class="count">${o.i+1} / ${OX.length}</p>${card}</div>
+ <button class="zone x" data-drop="X" ${o.ans?'disabled':''}><b>X</b>틀리다</button></div>
+ <div class="act">${o.ans?`<button class="go" data-act="next">${o.i+1<OX.length?'다음 문항':'관문 2로'}</button>`:''}<span>맞힌 문항 ${o.got}개</span></div></section>`;
+}
+function answer(a){const o=S.ox;if(o.ans)return;const q=OX[o.order[o.i]];o.ans=a;if(a===q.a)o.got++;else S.wrong.push({s:0,q:q.q,your:a,ans:q.a,why:q.why});render()}
+function chipB(id,text,cls='',suf=''){return `<button type="button" class="chip ${cls}" data-id="${id}">${esc(text)}${suf}</button>`}
+function matchV(){
+ const st=S.match;
+ H.pick=!st.graded;
+ H.drop=(id,t)=>{if(st.graded)return;for(const k in st.place)if(st.place[k]===id)delete st.place[k];if(t!=='tray')st.place[t]=id;render()};
+ const used=new Set(Object.values(st.place));
+ const rows=st.dorder.map(i=>{const pid=st.place['d'+i];let inner='<span class="ph">용어를 여기로</span>',cls='',note='';
+  if(pid){const ti=+pid.slice(1);if(st.graded){const ok=ti===i;cls=ok?'ok':'bad';if(!ok)note=`<em>정답: ${esc(TERMS[i])}</em>`;inner=chipB(pid,TERMS[ti],(ok?'ok':'bad')+' locked')}else inner=chipB(pid,TERMS[ti])}
+  return `<div class="row ${cls}"><div class="slot" data-drop="d${i}" tabindex="0">${inner}</div><div class="def">${esc(DEFS[i])}${note}</div></div>`}).join('');
+ const left=st.corder.filter(i=>!used.has('t'+i));
+ const tray=`<div class="tray" data-drop="tray" tabindex="0">${left.length?left.map(i=>chipB('t'+i,TERMS[i],st.graded?'locked':'')).join(''):'<span class="ph">모든 칸을 채웠어요</span>'}</div>`;
+ const filled=Object.keys(st.place).length;
+ return `<section class="panel"><h2>관문 2 · 용어 연결</h2><p class="lead">설명에 알맞은 용어를 끌어다 놓으세요. 용어 카드 2장은 남습니다.</p>
+ <div class="defs">${rows}</div>${tray}
+ <div class="act">${st.graded?`<button class="go" data-act="stage">관문 3으로</button><span>${S.scores[1].got} / 8 정답</span>`:`<button class="go" data-act="grade" ${filled<8?'disabled':''}>채점하기</button><span>${filled} / 8 채움</span>`}</div></section>`;
+}
+function gradeMatch(){const st=S.match;let got=0;for(const i of idx(DEFS.length)){const ti=+st.place['d'+i].slice(1);if(ti===i)got++;else S.wrong.push({s:1,q:DEFS[i],your:TERMS[ti],ans:TERMS[i],why:''})}st.graded=true;S.scores[1]={got,total:8};render()}
+function binName(cfg,k){return cfg.bins.find(b=>b.k===k).t}
+function sortV(key){
+ const cfg=SORTS[key],st=S[key],si=STAGES.findIndex(s=>s.key===key);
+ H.pick=!st.graded;
+ H.drop=(id,t)=>{if(st.graded)return;if(t==='tray')delete st.bins[id];else st.bins[id]=t;render()};
+ const ch=i=>{const it=cfg.items[i],b=st.bins['s'+i];if(!st.graded)return chipB('s'+i,it.t);const ok=b===it.b;return chipB('s'+i,it.t,(ok?'ok':'bad')+' locked',ok?'':`<span class="to">→ ${esc(binName(cfg,it.b))}</span>`)};
+ const left=st.order.filter(i=>!st.bins['s'+i]);
+ const bins=cfg.bins.map(b=>`<div class="bin" data-drop="${b.k}" tabindex="0"><h3>${b.t}</h3><p>${b.d}</p><div class="in">${st.order.filter(i=>st.bins['s'+i]===b.k).map(ch).join('')}</div></div>`).join('');
+ const tray=st.graded?'':`<div class="tray" data-drop="tray" tabindex="0">${left.length?left.map(ch).join(''):'<span class="ph">모든 카드를 옮겼어요</span>'}</div>`;
+ const expl=st.graded?`<details open><summary>풀이 보기</summary><ul>${cfg.items.map(it=>`<li><b>${esc(it.t)}</b> — ${esc(binName(cfg,it.b))}: ${esc(it.why)}</li>`).join('')}</ul></details>`:'';
+ return `<section class="panel"><h2>관문 ${si+1} · ${cfg.title}</h2><p class="lead">${cfg.lead}</p>${tray}<div class="bins">${bins}</div>${expl}
+ <div class="act">${st.graded?`<button class="go" data-act="stage">${si<3?'관문 '+(si+2)+'로':'결과 보기'}</button><span>${S.scores[si].got} / ${cfg.items.length} 정답</span>`:`<button class="go" data-act="grade" ${left.length?'disabled':''}>채점하기</button><span>${cfg.items.length-left.length} / ${cfg.items.length} 옮김</span>`}</div></section>`;
+}
+function gradeSort(key){const cfg=SORTS[key],st=S[key],si=STAGES.findIndex(s=>s.key===key);let got=0;
+ cfg.items.forEach((it,i)=>{const b=st.bins['s'+i];if(b===it.b)got++;else S.wrong.push({s:si,q:it.t,your:binName(cfg,b),ans:binName(cfg,it.b),why:it.why})});
+ st.graded=true;S.scores[si]={got,total:cfg.items.length};render()}
+function resultV(){
+ const got=S.scores.reduce((s,x)=>s+x.got,0),pct=Math.round(got/TOTAL*100);
+ const msg=pct>=90?'훌륭해요. 핵심 개념을 잘 이해하고 있어요.':pct>=70?'잘했어요. 틀린 개념만 다시 확인해 보세요.':'판서 정리와 용어 정리를 다시 보고 도전해 보세요.';
+ const bars=STAGES.map((s,i)=>{const sc=S.scores[i];return `<div class="bar" style="--c:${s.c}"><span>${s.name}</span><div class="track"><div class="fill" style="width:${sc.got/sc.total*100}%"></div></div><span class="n">${sc.got}/${sc.total}</span></div>`}).join('');
+ const rows=S.wrong.map(w=>`<tr><td data-l="관문">${esc(STAGES[w.s].name)}</td><td data-l="문항">${esc(w.q)}</td><td data-l="내 답" class="bad">${esc(w.your)}</td><td data-l="정답" class="ok">${esc(w.ans)}</td><td data-l="풀이">${esc(w.why)}</td></tr>`).join('');
+ return `<section class="panel"><h2>결과</h2><div class="score"><b>${got}<small style="font-size:.45em"> / ${TOTAL}</small></b><span>${pct}점</span></div>
+ <p class="who">${esc(S.sid)} ${esc(S.name)} · ${new Date().toLocaleString('ko-KR')} · ${msg}</p>
+ <div class="send" id="sub" role="status"></div>
+ <div class="bars">${bars}</div>
+ <h3 class="sub">틀린 문항 ${S.wrong.length}개</h3>
+ ${S.wrong.length?`<table class="stack"><thead><tr><th>관문</th><th>문항</th><th>내 답</th><th>정답</th><th>풀이</th></tr></thead><tbody>${rows}</tbody></table>`:'<p class="lead">모두 맞혔어요.</p>'}
+ <div class="act" style="margin-top:22px"><button class="go" data-act="retry">처음부터 다시 풀기</button><span>다시 풀면 새 기록으로 한 번 더 제출됩니다.</span></div></section>`;
+}
+function subUI(){const el=$('#sub');if(!el)return;const s=S.sent;
+ el.className='send'+(s==='ok'?' ok':s==='err'?' bad':'');
+ el.innerHTML=s==='ok'?`<b>선생님께 제출했어요.</b><span>${esc(S.sentAt)} 제출</span>`:s==='err'?`<b>제출하지 못했어요.</b><span>${esc(S.err)}</span><button class="go ghostbtn" data-act="resend">다시 보내기</button>`:'<b>점수를 선생님께 보내는 중…</b>';}
+async function sendScore(force){
+ if(S.sent==='ok'||S.sent==='busy'||(S.sent==='err'&&!force)){subUI();return}
+ if(!window.Collector){S.sent='err';S.err='전송 모듈을 불러오지 못했어요. 이 화면을 캡처해 선생님께 보여 주세요.';subUI();return}
+ if(!S.payload){const got=S.scores.reduce((t,x)=>t+x.got,0);
+  S.payload={quiz:QUIZ,sid:S.sid,name:S.name,got,total:TOTAL,attempt:Collector.attempt(QUIZ),
+   stages:STAGES.map((s,i)=>s.name+' '+S.scores[i].got+'/'+S.scores[i].total).join(', '),
+   wrong:S.wrong.map(w=>'['+STAGES[w.s].name+'] '+w.q+' (내 답 '+w.your+' / 정답 '+w.ans+')').join('\n')}}
+ S.sent='busy';subUI();
+ try{await Collector.send(S.payload);S.sent='ok';S.sentAt=new Date().toLocaleTimeString('ko-KR')}
+ catch(e){S.sent='err';S.err=e.name==='AbortError'?'응답이 없어요. 인터넷 연결을 확인하고 다시 보내세요.':e.message}
+ subUI();
+}
+function act(a){
+ if(a==='next'){const o=S.ox;o.i++;o.ans=null;if(o.i>=OX.length){S.scores[0]={got:o.got,total:OX.length};S.stage=1}render()}
+ else if(a==='grade'){S.stage===1?gradeMatch():gradeSort(STAGES[S.stage].key)}
+ else if(a==='stage'){S.stage++;render();window.scrollTo({top:0,behavior:'smooth'})}
+ else if(a==='resend'){sendScore(true)}
+ else if(a==='retry'){reset({sid:S.sid,name:S.name});S.stage=0;render();window.scrollTo({top:0,behavior:'smooth'})}
+}
+const hit=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.closest('[data-drop]')};
+const clearOver=()=>document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.chip');if(!c||c.classList.contains('locked')||e.button>0)return;D={c,x:e.clientX,y:e.clientY,g:null}});
+document.addEventListener('pointermove',e=>{
+ if(!D)return;
+ if(!D.g){if(Math.hypot(e.clientX-D.x,e.clientY-D.y)<6)return;const r=D.c.getBoundingClientRect();D.g=D.c.cloneNode(true);D.g.classList.add('ghost');D.g.classList.remove('sel');D.g.style.width=r.width+'px';D.dx=D.x-r.left;D.dy=D.y-r.top;document.body.append(D.g);D.c.classList.add('lift');select(null)}
+ D.g.style.transform=`translate(${e.clientX-D.dx}px,${e.clientY-D.dy}px) rotate(-2deg)`;
+ const t=hit(e);clearOver();if(t&&!t.disabled)t.classList.add('over');e.preventDefault();
+},{passive:false});
+document.addEventListener('pointerup',e=>{
+ if(!D)return;const d=D;D=null;
+ if(d.g){d.g.remove();d.c.classList.remove('lift');clearOver();const t=hit(e);if(t&&!t.disabled&&H.drop)H.drop(d.c.dataset.id,t.dataset.drop)}
+ else if(H.pick){const z=d.c.closest('[data-drop]'),sc=sel&&document.querySelector('.chip[data-id="'+sel+'"]'),sz=sc&&sc.closest('[data-drop]');
+  if(sel&&sel!==d.c.dataset.id&&z&&sz&&z!==sz&&H.drop){const id=sel;select(null);H.drop(id,z.dataset.drop)}else select(sel===d.c.dataset.id?null:d.c)}
+});
+document.addEventListener('pointercancel',()=>{if(D){D.g&&D.g.remove();D.c.classList.remove('lift');clearOver();D=null}});
+document.addEventListener('click',e=>{
+ const a=e.target.closest('[data-act]');if(a){act(a.dataset.act);return}
+ const c=e.target.closest('.chip');if(c){if(e.detail===0&&H.pick&&!c.classList.contains('locked'))select(sel===c.dataset.id?null:c);return}
+ const t=e.target.closest('[data-drop]');if(!t)return;
+ if(sel&&H.drop){const id=sel;select(null);H.drop(id,t.dataset.drop)}else if(H.tap)H.tap(t.dataset.drop);
+});
+document.addEventListener('keydown',e=>{
+ if(e.target.matches('input'))return;
+ const t=e.target.closest('[data-drop]');
+ if(t&&t.tagName!=='BUTTON'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.click();return}
+ if(S.stage===0){const k=e.key.toLowerCase();if(!S.ox.ans&&(k==='o'||k==='x')){answer(k.toUpperCase())}else if(S.ox.ans&&e.key==='Enter'&&!e.target.closest('button'))act('next')}
+});
+document.addEventListener('submit',e=>{e.preventDefault();S.sid=$('#sid').value.trim();S.name=$('#nm').value.trim();try{localStorage.setItem('dsq-who',JSON.stringify({sid:S.sid,name:S.name}))}catch(err){}S.stage=0;render()});
+render();
+}
+</script>
+</body>
+</html>
